@@ -2,6 +2,18 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
 import { Doctor } from '../doctors/doctors.entity';
 import { Patient } from '../patients/patients.entity';
+import { Admin } from '../admin/admin.entity';
+
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  DOCTOR = 'DOCTOR',
+  PATIENT = 'PATIENT',
+}
+
+export enum AuthProvider {
+  LOCAL = 'LOCAL',
+  GOOGLE = 'GOOGLE',
+}
 
 @Entity()
 export class User {
@@ -14,21 +26,27 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   phone: string;
 
-  @Column()
+  @Column({ nullable: true })
   password: string;
 
-  @Column()
-  role: string; // PATIENT | DOCTOR | ADMIN
+  @Column({ type: 'enum', enum: UserRole })
+  role: UserRole; // PATIENT | DOCTOR | ADMIN
+
+  @Column({ type: 'enum', enum: AuthProvider, default: AuthProvider.LOCAL })
+  provider: AuthProvider;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 
-  @OneToOne(() => Doctor, doctor => doctor.user)
+  @OneToOne(() => Doctor, (doctor) => doctor.user)
   doctor: Doctor;
 
-  @OneToOne(() => Patient, patient => patient.user)
+  @OneToOne(() => Patient, (patient) => patient.user)
   patient: Patient;
+
+  @OneToOne(() => Admin, (admin) => admin.user)
+  admin: Admin;
 }

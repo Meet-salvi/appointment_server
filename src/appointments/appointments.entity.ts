@@ -1,5 +1,13 @@
 // src/appointments/appointments.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { Doctor } from '../doctors/doctors.entity';
 import { Patient } from '../patients/patients.entity';
 import { Clinic } from '../clinics/clinics.entity';
@@ -11,13 +19,13 @@ export class Appointment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Doctor, doctor => doctor.appointments)
+  @ManyToOne(() => Doctor, (doctor) => doctor.appointments)
   doctor: Doctor;
 
-  @ManyToOne(() => Patient, patient => patient.appointments)
+  @ManyToOne(() => Patient, (patient) => patient.appointments)
   patient: Patient;
 
-  @ManyToOne(() => Clinic, clinic => clinic.appointments)
+  @ManyToOne(() => Clinic, (clinic) => clinic.appointments)
   clinic: Clinic;
 
   @Column({ type: 'date' })
@@ -38,9 +46,10 @@ export class Appointment {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 
-  @OneToOne(() => Payment, payment => payment.appointment)
+  @OneToOne(() => Payment, (payment) => payment.appointment)
+  @JoinColumn()
   payment: Payment;
 
-  @OneToMany(() => Message, message => message.appointment)
+  @OneToMany(() => Message, (message) => message.appointment)
   messages: Message[];
 }

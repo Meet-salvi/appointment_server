@@ -7,7 +7,7 @@ export class PatientDetails {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Patient, patient => patient.details)
+  @ManyToOne(() => Patient, (patient) => patient.details)
   patient: Patient;
 
   @Column()

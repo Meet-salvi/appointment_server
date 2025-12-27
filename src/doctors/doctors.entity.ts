@@ -1,5 +1,13 @@
 // src/doctors/doctors.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { User } from '../users/users.entity';
 import { Clinic } from '../clinics/clinics.entity';
 import { DoctorAvailability } from '../doctor-availability/doctor-availability.entity';
@@ -14,7 +22,7 @@ export class Doctor {
   @JoinColumn()
   user: User;
 
-  @ManyToOne(() => Clinic, clinic => clinic.doctors)
+  @ManyToOne(() => Clinic, (clinic) => clinic.doctors)
   @JoinColumn()
   clinic: Clinic;
 
@@ -27,9 +35,9 @@ export class Doctor {
   @Column()
   is_verified: boolean;
 
-  @OneToMany(() => DoctorAvailability, availability => availability.doctor)
+  @OneToMany(() => DoctorAvailability, (availability) => availability.doctor)
   availability: DoctorAvailability[];
 
-  @OneToMany(() => Appointment, appointment => appointment.doctor)
+  @OneToMany(() => Appointment, (appointment) => appointment.doctor)
   appointments: Appointment[];
 }

@@ -20,9 +20,9 @@ export class Clinic {
   @Column()
   contact_number: string;
 
-  @OneToMany(() => Doctor, doctor => doctor.clinic)
+  @OneToMany(() => Doctor, (doctor) => doctor.clinic)
   doctors: Doctor[];
 
-  @OneToMany(() => Appointment, appointment => appointment.clinic)
+  @OneToMany(() => Appointment, (appointment) => appointment.clinic)
   appointments: Appointment[];
 }

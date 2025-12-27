@@ -1,5 +1,11 @@
 // src/patients/patients.entity.ts
-import { Entity, PrimaryGeneratedColumn, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  OneToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { User } from '../users/users.entity';
 import { Appointment } from '../appointments/appointments.entity';
 import { PatientDetails } from '../patient-details/patient-details.entity';
@@ -13,9 +19,9 @@ export class Patient {
   @JoinColumn()
   user: User;
 
-  @OneToMany(() => Appointment, appointment => appointment.patient)
+  @OneToMany(() => Appointment, (appointment) => appointment.patient)
   appointments: Appointment[];
 
-  @OneToMany(() => PatientDetails, details => details.patient)
+  @OneToMany(() => PatientDetails, (details) => details.patient)
   details: PatientDetails[];
 }

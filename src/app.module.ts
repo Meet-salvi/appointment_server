@@ -12,6 +12,8 @@ import { PaymentsModule } from './payments/payments.module';
 import { MessagesModule } from './messages/messages.module';
 import { DoctorAvailabilityModule } from './doctor-availability/doctor-availability.module';
 import { PatientDetailsModule } from './patient-details/patient-details.module';
+import { AdminModule } from './admin/admin.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { PatientDetailsModule } from './patient-details/patient-details.module';
     MessagesModule,
     DoctorAvailabilityModule,
     PatientDetailsModule,
+    AdminModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
