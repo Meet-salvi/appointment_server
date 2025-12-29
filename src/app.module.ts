@@ -14,6 +14,7 @@ import { DoctorAvailabilityModule } from './doctor-availability/doctor-availabil
 import { PatientDetailsModule } from './patient-details/patient-details.module';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AuthModule } from './auth/auth.module';
     PatientDetailsModule,
     AdminModule,
     AuthModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

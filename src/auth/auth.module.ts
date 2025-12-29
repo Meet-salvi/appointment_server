@@ -8,6 +8,7 @@ import { User } from '../users/users.entity';
 import { Doctor } from '../doctors/doctors.entity';
 import { Patient } from '../patients/patients.entity';
 import { Admin } from '../admin/admin.entity';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { Admin } from '../admin/admin.entity';
       secret: process.env.JWT_SECRET || 'secret123',
       signOptions: { expiresIn: '1d' },
     }),
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],

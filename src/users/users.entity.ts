@@ -23,10 +23,10 @@ export class User {
   @Column()
   full_name: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, nullable: true })
   email: string;
 
-  @Column({ nullable: true })
+  @Column({ unique: true, nullable: true })
   phone: string;
 
   @Column({ nullable: true })
@@ -37,6 +37,15 @@ export class User {
 
   @Column({ type: 'enum', enum: AuthProvider, default: AuthProvider.LOCAL })
   provider: AuthProvider;
+
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  otp: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  otpExpiresAt: Date | null;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;

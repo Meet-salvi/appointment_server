@@ -7,6 +7,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { MailService } from '../mail/mail.service';
+import { Response } from 'express';
 
 import { User, UserRole, AuthProvider } from '../users/users.entity';
 import { Doctor } from '../doctors/doctors.entity';
@@ -14,6 +16,8 @@ import { Patient } from '../patients/patients.entity';
 import { Admin } from '../admin/admin.entity';
 import { SignupDto } from './dto/singup.dto';
 import { SigninDto } from './dto/singin.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResendOtpDto } from './dto/resend-otp.dto';
 
 @Injectable()
 export class AuthService {
@@ -23,9 +27,10 @@ export class AuthService {
     @InjectRepository(Patient) private patientRepo: Repository<Patient>,
     @InjectRepository(Admin) private adminRepo: Repository<Admin>,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
-  // ✅ SIGNUP
+  // SIGNUP
   async signup(dto: SignupDto) {
     const exists = await this.userRepo.findOne({
       where: { email: dto.email },
@@ -39,6 +44,10 @@ export class AuthService {
       ? await bcrypt.hash(dto.password, 10)
       : null;
 
+    // 🔐 Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
     const user = this.userRepo.create({
       full_name: dto.full_name,
       email: dto.email,
@@ -46,6 +55,9 @@ export class AuthService {
       password: hashedPassword,
       role: dto.role,
       provider: AuthProvider.LOCAL,
+      isVerified: false,
+      otp,
+      otpExpiresAt,
     });
 
     await this.userRepo.save(user);
@@ -61,13 +73,16 @@ export class AuthService {
       await this.adminRepo.save({ user });
     }
 
+    // Send OTP Email
+    await this.mailService.sendOtp(user.email, otp);
+
     return {
-      message: 'User registered successfully',
+      message: 'Signup successful. Please verify OTP sent to your email.',
       userId: user.id,
     };
   }
 
-  // ✅ SIGNIN
+  // SIGNIN
   async signin(dto: SigninDto, res: any) {
     const user = await this.userRepo.findOne({
       where: { email: dto.email },
@@ -75,6 +90,11 @@ export class AuthService {
 
     if (!user || !user.password) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Check if email is verified
+    if (!user.isVerified) {
+      throw new UnauthorizedException('Please verify your email first');
     }
 
     const isMatch = await bcrypt.compare(dto.password, user.password);
@@ -103,5 +123,67 @@ export class AuthService {
   logout(res: any) {
     res.clearCookie('access_token');
     return { message: 'Logged out successfully' };
+  }
+
+  // Additional methods like verifyOtp
+  async verifyOtp(dto: VerifyOtpDto) {
+    const user = await this.userRepo.findOne({
+      where: { email: dto.email },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.isVerified) {
+      return { message: 'User already verified' };
+    }
+
+    if (
+      user.otp !== dto.otp ||
+      !user.otpExpiresAt ||
+      user.otpExpiresAt < new Date()
+    ) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    user.isVerified = true;
+    user.otp = null;
+    user.otpExpiresAt = null;
+
+    await this.userRepo.save(user);
+
+    return { message: 'Email verified successfully' };
+  }
+
+  // RESEND OTP
+  async resendOtp(dto: ResendOtpDto) {
+    const user = await this.userRepo.findOne({
+      where: { email: dto.email },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.isVerified) {
+      throw new BadRequestException('User already verified');
+    }
+
+    // 🔐 Generate new OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.otp = otp;
+    user.otpExpiresAt = otpExpiresAt;
+
+    await this.userRepo.save(user);
+
+    // 📧 Send OTP again
+    await this.mailService.sendOtp(user.email, otp);
+
+    return {
+      message: 'OTP resent successfully to your email',
+    };
   }
 }

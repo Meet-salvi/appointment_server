@@ -1,14 +1,19 @@
 // src/doctor-availability/doctor-availability.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { Doctor } from '../doctors/doctors.entity';
-
 
 @Entity()
 export class DoctorAvailability {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Doctor, doctor => doctor.availability)
+  @ManyToOne(() => Doctor, (doctor) => doctor.availability)
   doctor: Doctor;
 
   @Column()
