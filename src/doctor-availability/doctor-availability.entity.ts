@@ -4,9 +4,25 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
+  // OneToMany,
 } from 'typeorm';
 import { Doctor } from '../doctors/doctors.entity';
+
+export enum DayOfWeek {
+  MONDAY = 'MONDAY',
+  TUESDAY = 'TUESDAY',
+  WEDNESDAY = 'WEDNESDAY',
+  THURSDAY = 'THURSDAY',
+  FRIDAY = 'FRIDAY',
+  SATURDAY = 'SATURDAY',
+  SUNDAY = 'SUNDAY',
+}
+
+export enum SessionType {
+  MORNING = 'MORNING',
+  AFTERNOON = 'AFTERNOON',
+  EVENING = 'EVENING',
+}
 
 @Entity()
 export class DoctorAvailability {
@@ -16,11 +32,11 @@ export class DoctorAvailability {
   @ManyToOne(() => Doctor, (doctor) => doctor.availability)
   doctor: Doctor;
 
-  @Column()
-  day_of_week: string;
+  @Column({ type: 'enum', enum: DayOfWeek })
+  day_of_week: DayOfWeek;
 
-  @Column()
-  session: string; // Morning | Afternoon | Evening
+  @Column({ type: 'enum', enum: SessionType })
+  session: SessionType;
 
   @Column({ type: 'time' })
   start_time: string;

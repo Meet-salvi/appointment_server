@@ -26,13 +26,13 @@ export class Doctor {
   @JoinColumn()
   clinic: Clinic;
 
-  @Column()
+  @Column({ default: 0 })
   experience_years: number;
 
-  @Column()
+  @Column({ default: 0 })
   consultation_fee: number;
 
-  @Column()
+  @Column({ default: false })
   is_verified: boolean;
 
   @OneToMany(() => DoctorAvailability, (availability) => availability.doctor)
