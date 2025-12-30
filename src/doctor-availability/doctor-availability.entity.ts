@@ -1,46 +1,58 @@
-// src/doctor-availability/doctor-availability.entity.ts
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  // OneToMany,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { Doctor } from '../doctors/doctors.entity';
 
-export enum DayOfWeek {
-  MONDAY = 'MONDAY',
-  TUESDAY = 'TUESDAY',
-  WEDNESDAY = 'WEDNESDAY',
-  THURSDAY = 'THURSDAY',
-  FRIDAY = 'FRIDAY',
-  SATURDAY = 'SATURDAY',
-  SUNDAY = 'SUNDAY',
+export enum ScheduleType {
+  STREAM = 'STREAM',
+  WAVE = 'WAVE',
+  SPECIFIC = 'SPECIFIC',
 }
 
-export enum SessionType {
-  MORNING = 'MORNING',
-  AFTERNOON = 'AFTERNOON',
-  EVENING = 'EVENING',
-}
-
-@Entity()
+@Entity('doctor_availability')
 export class DoctorAvailability {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Doctor, (doctor) => doctor.availability)
+  @ManyToOne(() => Doctor, (doctor) => doctor.availability, {
+    onDelete: 'CASCADE',
+  })
   doctor: Doctor;
 
-  @Column({ type: 'enum', enum: DayOfWeek })
-  day_of_week: DayOfWeek;
+  // Custom date (override)
+  @Column({ type: 'date', nullable: true })
+  date?: string;
 
-  @Column({ type: 'enum', enum: SessionType })
-  session: SessionType;
+  // Recurring rule
+  @Column({ nullable: true })
+  day_of_week?: string; // MONDAY, TUESDAY...
 
   @Column({ type: 'time' })
   start_time: string;
 
   @Column({ type: 'time' })
   end_time: string;
+
+  @Column({
+    type: 'enum',
+    enum: ScheduleType,
+    default: ScheduleType.STREAM,
+  })
+  schedule_type: ScheduleType;
+
+  // STREAM
+  @Column({ nullable: true })
+  slot_duration_minutes?: number;
+
+  // WAVE
+  @Column({ nullable: true })
+  wave_interval_minutes?: number;
+
+  @Column({ nullable: true })
+  wave_capacity?: number;
+
+  // SPECIFIC
+  @Column({ nullable: true })
+  capacity?: number;
+
+  @Column({ default: true })
+  is_available: boolean;
 }
