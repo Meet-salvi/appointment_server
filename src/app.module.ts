@@ -15,6 +15,7 @@ import { PatientDetailsModule } from './patient-details/patient-details.module';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
+import { SpecializationModule } from './specialization/specialization.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { MailModule } from './mail/mail.module';
     AdminModule,
     AuthModule,
     MailModule,
+    SpecializationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

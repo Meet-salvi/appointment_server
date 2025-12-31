@@ -12,6 +12,7 @@ import { User } from '../users/users.entity';
 import { Clinic } from '../clinics/clinics.entity';
 import { DoctorAvailability } from '../doctor-availability/doctor-availability.entity';
 import { Appointment } from '../appointments/appointments.entity';
+import { Specialization } from 'src/specialization/specialization.entity';
 
 @Entity()
 export class Doctor {
@@ -26,14 +27,20 @@ export class Doctor {
   @JoinColumn()
   clinic: Clinic;
 
-  @Column({ default: 0 })
+  @Column({ type: 'int', default: 0 })
   experience_years: number;
 
-  @Column({ default: 0 })
+  @Column({ type: 'int', default: 0 })
   consultation_fee: number;
+
+  @Column({ type: 'text', nullable: true })
+  qualification: string;
 
   @Column({ default: false })
   is_verified: boolean;
+
+  @ManyToOne(() => Specialization, (s) => s.doctors, { eager: true })
+  specialization: Specialization;
 
   @OneToMany(() => DoctorAvailability, (availability) => availability.doctor)
   availability: DoctorAvailability[];

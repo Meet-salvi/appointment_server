@@ -56,7 +56,6 @@ export class AuthService {
       role: dto.role,
       provider: AuthProvider.LOCAL,
       isVerified: false,
-      otpExpiresAt,
     });
 
     await this.userRepo.save(user);
