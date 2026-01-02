@@ -1,5 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { Doctor } from '../doctors/doctors.entity';
+import { Appointment } from '../appointments/appointments.entity';
 
 export enum ScheduleType {
   STREAM = 'STREAM',
@@ -16,6 +23,9 @@ export class DoctorAvailability {
     onDelete: 'CASCADE',
   })
   doctor: Doctor;
+
+  @OneToMany(() => Appointment, (appointment) => appointment.availability)
+  appointments: Appointment[];
 
   // Custom date (override)
   @Column({ type: 'date', nullable: true })

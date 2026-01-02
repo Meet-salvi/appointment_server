@@ -8,7 +8,7 @@ export class Message {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Appointment, appointment => appointment.messages)
+  @ManyToOne(() => Appointment, (appointment) => appointment.messages)
   appointment: Appointment;
 
   @ManyToOne(() => User)

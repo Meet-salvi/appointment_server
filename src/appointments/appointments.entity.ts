@@ -13,6 +13,12 @@ import { Patient } from '../patients/patients.entity';
 import { Clinic } from '../clinics/clinics.entity';
 import { Payment } from '../payments/payments.entity';
 import { Message } from '../messages/messages.entity';
+import { DoctorAvailability } from '../doctor-availability/doctor-availability.entity';
+
+export enum AppointmentStatus {
+  BOOKED = 'BOOKED',
+  CANCELLED = 'CANCELLED',
+}
 
 @Entity()
 export class Appointment {
@@ -28,6 +34,9 @@ export class Appointment {
   @ManyToOne(() => Clinic, (clinic) => clinic.appointments)
   clinic: Clinic;
 
+  @ManyToOne(() => DoctorAvailability)
+  availability: DoctorAvailability;
+
   @Column({ type: 'date' })
   appointment_date: string;
 
@@ -37,8 +46,13 @@ export class Appointment {
   @Column({ type: 'time' })
   end_time: string;
 
-  @Column()
-  status: string; // Booked | Cancelled | Completed
+  // BOOKED, CANCELLED
+  @Column({
+    type: 'enum',
+    enum: AppointmentStatus,
+    default: AppointmentStatus.BOOKED,
+  })
+  status: AppointmentStatus;
 
   @Column()
   token_number: number;
