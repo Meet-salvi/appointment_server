@@ -11,7 +11,6 @@ import { Appointment } from '../appointments/appointments.entity';
 export enum ScheduleType {
   STREAM = 'STREAM',
   WAVE = 'WAVE',
-  SPECIFIC = 'SPECIFIC',
 }
 
 @Entity('doctor_availability')
@@ -24,16 +23,16 @@ export class DoctorAvailability {
   })
   doctor: Doctor;
 
-  @OneToMany(() => Appointment, (appointment) => appointment.availability)
+  @OneToMany(() => Appointment, (a) => a.availability)
   appointments: Appointment[];
 
-  // Custom date (override)
+  // RECURRING
+  @Column({ nullable: true })
+  day_of_week?: string;
+
+  // CUSTOM
   @Column({ type: 'date', nullable: true })
   date?: string;
-
-  // Recurring rule
-  @Column({ nullable: true })
-  day_of_week?: string; // MONDAY, TUESDAY...
 
   @Column({ type: 'time' })
   start_time: string;
@@ -44,24 +43,15 @@ export class DoctorAvailability {
   @Column({
     type: 'enum',
     enum: ScheduleType,
-    default: ScheduleType.STREAM,
   })
   schedule_type: ScheduleType;
 
-  // STREAM
-  @Column({ nullable: true })
-  slot_duration_minutes?: number;
+  //ONE COLUMN FOR STREAM & WAVE
+  @Column()
+  interval_minutes: number;
 
-  // WAVE
-  @Column({ nullable: true })
-  wave_interval_minutes?: number;
-
-  @Column({ nullable: true })
-  wave_capacity?: number;
-
-  // SPECIFIC
-  @Column({ nullable: true })
-  capacity?: number;
+  @Column()
+  capacity: number;
 
   @Column({ default: true })
   is_available: boolean;

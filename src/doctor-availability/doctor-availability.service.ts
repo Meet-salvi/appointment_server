@@ -1,154 +1,124 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DoctorAvailability, ScheduleType } from './doctor-availability.entity';
-import { Doctor } from '../doctors/doctors.entity';
-import { CreateDoctorAvailabilityDto } from './doctor-availability.dto';
-
-interface Slot {
-  start_time: string;
-  end_time: string;
-  capacity: number;
-}
+import { CreateRecurringAvailabilityDto } from './dto/create-recurring-availability.dto';
+import { CreateCustomAvailabilityDto } from './dto/create-custom-availability.dto';
 
 @Injectable()
 export class DoctorAvailabilityService {
   constructor(
     @InjectRepository(DoctorAvailability)
-    private availabilityRepo: Repository<DoctorAvailability>,
-    @InjectRepository(Doctor)
-    private doctorRepo: Repository<Doctor>,
+    private repo: Repository<DoctorAvailability>,
   ) {}
 
-  // ---------- HELPERS ----------
-  private timeToMinutes(time: string): number {
-    const [h, m] = time.split(':').map(Number);
-    return h * 60 + m;
-  }
+  private validateInterval(
+    scheduleType: ScheduleType,
+    interval: number,
+    start: string,
+    end: string,
+  ) {
+    const startMin =
+      Number(start.split(':')[0]) * 60 + Number(start.split(':')[1]);
+    const endMin = Number(end.split(':')[0]) * 60 + Number(end.split(':')[1]);
+    const duration = endMin - startMin;
 
-  private minutesToTime(minutes: number): string {
-    const h = Math.floor(minutes / 60)
-      .toString()
-      .padStart(2, '0');
-    const m = (minutes % 60).toString().padStart(2, '0');
-    return `${h}:${m}:00`;
-  }
-
-  private getDayOfWeek(date: string): string {
-    return new Date(date)
-      .toLocaleDateString('en-US', { weekday: 'long' })
-      .toUpperCase();
-  }
-
-  // ---------- SLOT GENERATION ----------
-  private generateStreamSlots(a: DoctorAvailability): Slot[] {
-    const slots: Slot[] = [];
-    let start = this.timeToMinutes(a.start_time);
-    const end = this.timeToMinutes(a.end_time);
-    const duration = a.slot_duration_minutes || 15;
-
-    while (start + duration <= end) {
-      slots.push({
-        start_time: this.minutesToTime(start),
-        end_time: this.minutesToTime(start + duration),
-        capacity: 1,
-      });
-      start += duration;
-    }
-    return slots;
-  }
-
-  private generateWaveSlots(a: DoctorAvailability): Slot[] {
-    const slots: Slot[] = [];
-    let start = this.timeToMinutes(a.start_time);
-    const end = this.timeToMinutes(a.end_time);
-    const interval = a.wave_interval_minutes || 30;
-
-    while (start < end) {
-      slots.push({
-        start_time: this.minutesToTime(start),
-        end_time: this.minutesToTime(start + interval),
-        capacity: a.wave_capacity || 5,
-      });
-      start += interval;
-    }
-    return slots;
-  }
-
-  private generateSpecificSlot(a: DoctorAvailability): Slot[] {
-    return [
-      {
-        start_time: a.start_time,
-        end_time: a.end_time,
-        capacity: a.capacity || 1,
-      },
-    ];
-  }
-
-  // ---------- CRUD ----------
-  async createAvailability(doctorId: number, dto: CreateDoctorAvailabilityDto) {
-    const doctor = await this.doctorRepo.findOne({
-      where: { id: doctorId },
-    });
-
-    if (!doctor) throw new BadRequestException('Doctor not found');
-
-    if (dto.start_time >= dto.end_time) {
-      throw new BadRequestException('Invalid time range');
+    if (interval <= 0) {
+      throw new BadRequestException('interval_minutes must be greater than 0');
     }
 
-    const availability = this.availabilityRepo.create({
-      ...dto,
-      doctor,
-    });
+    if (interval > duration) {
+      throw new BadRequestException(
+        'interval_minutes cannot be greater than total availability duration',
+      );
+    }
 
-    return this.availabilityRepo.save(availability);
+    if (scheduleType === ScheduleType.STREAM && duration % interval !== 0) {
+      throw new BadRequestException(
+        'interval_minutes must divide evenly for STREAM scheduling',
+      );
+    }
   }
 
-  async getAllAvailabilityByDoctor(
+  private async checkOverlap(
     doctorId: number,
-  ): Promise<DoctorAvailability[]> {
-    const doctor = await this.doctorRepo.findOne({
-      where: { id: doctorId },
-    });
+    condition: any,
+    start: string,
+    end: string,
+  ) {
+    const overlap = await this.repo
+      .createQueryBuilder('a')
+      .where('a.doctorId = :doctorId', { doctorId })
+      .andWhere(condition.query, condition.params)
+      .andWhere('(a.start_time < :end AND a.end_time > :start)', {
+        start,
+        end,
+      })
+      .getOne();
 
-    if (!doctor) {
-      throw new BadRequestException('Doctor not found');
+    if (overlap) {
+      throw new BadRequestException(
+        'Availability already exists for this time range',
+      );
     }
-
-    return this.availabilityRepo.find({
-      where: { doctor: { id: doctorId } },
-      order: {
-        date: 'DESC',
-        day_of_week: 'ASC',
-        start_time: 'ASC',
-      },
-    });
   }
 
-  async getSlots(doctorId: number, date: string): Promise<Slot[]> {
-    const availability = await this.availabilityRepo.findOne({
-      where: [
-        { doctor: { id: doctorId }, date },
-        {
-          doctor: { id: doctorId },
-          day_of_week: this.getDayOfWeek(date),
-        },
-      ],
-      order: { date: 'DESC' }, // custom date first
+  async createRecurring(doctorId: number, dto: CreateRecurringAvailabilityDto) {
+    this.validateInterval(
+      dto.schedule_type,
+      dto.interval_minutes,
+      dto.start_time,
+      dto.end_time,
+    );
+
+    await this.checkOverlap(
+      doctorId,
+      {
+        query: 'a.day_of_week = :day',
+        params: { day: dto.day_of_week },
+      },
+      dto.start_time,
+      dto.end_time,
+    );
+
+    return this.repo.save(
+      this.repo.create({
+        ...dto,
+        doctor: { id: doctorId },
+      }),
+    );
+  }
+
+  async createCustom(doctorId: number, dto: CreateCustomAvailabilityDto) {
+    this.validateInterval(
+      dto.schedule_type,
+      dto.interval_minutes,
+      dto.start_time,
+      dto.end_time,
+    );
+
+    await this.checkOverlap(
+      doctorId,
+      {
+        query: 'a.date = :date',
+        params: { date: dto.date },
+      },
+      dto.start_time,
+      dto.end_time,
+    );
+
+    return this.repo.save(
+      this.repo.create({
+        ...dto,
+        doctor: { id: doctorId },
+      }),
+    );
+  }
+
+  async getAllByDoctor(doctorId: number) {
+    return this.repo.find({
+      where: { doctor: { id: doctorId } },
+      order: { start_time: 'ASC' },
     });
-
-    if (!availability || !availability.is_available) return [];
-
-    switch (availability.schedule_type) {
-      case ScheduleType.STREAM:
-        return this.generateStreamSlots(availability);
-      case ScheduleType.WAVE:
-        return this.generateWaveSlots(availability);
-      case ScheduleType.SPECIFIC:
-        return this.generateSpecificSlot(availability);
-      default:
-        return [];
-    }
   }
 }

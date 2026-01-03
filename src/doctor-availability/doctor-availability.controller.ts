@@ -4,39 +4,34 @@ import {
   Body,
   Param,
   Get,
-  Query,
   ParseIntPipe,
 } from '@nestjs/common';
-
 import { DoctorAvailabilityService } from './doctor-availability.service';
-import { CreateDoctorAvailabilityDto } from './doctor-availability.dto';
-import { Slot } from './doctor-availability.types';
+import { CreateRecurringAvailabilityDto } from './dto/create-recurring-availability.dto';
+import { CreateCustomAvailabilityDto } from './dto/create-custom-availability.dto';
 
 @Controller('doctor-availability')
 export class DoctorAvailabilityController {
   constructor(private readonly service: DoctorAvailabilityService) {}
 
-  // CREATE availability (recurring / custom / stream / wave / specific)
-  @Post(':doctorId')
-  create(
+  @Post('recurring/:doctorId')
+  createRecurring(
     @Param('doctorId', ParseIntPipe) doctorId: number,
-    @Body() dto: CreateDoctorAvailabilityDto,
+    @Body() dto: CreateRecurringAvailabilityDto,
   ) {
-    return this.service.createAvailability(doctorId, dto);
+    return this.service.createRecurring(doctorId, dto);
   }
 
-  // GET generated slots for a date
-  @Get(':doctorId/slots')
-  getSlots(
+  @Post('custom/:doctorId')
+  createCustom(
     @Param('doctorId', ParseIntPipe) doctorId: number,
-    @Query('date') date: string,
-  ): Promise<Slot[]> {
-    return this.service.getSlots(doctorId, date);
+    @Body() dto: CreateCustomAvailabilityDto,
+  ) {
+    return this.service.createCustom(doctorId, dto);
   }
 
-  // GET all availability for a doctor
   @Get(':doctorId')
-  getAllAvailability(@Param('doctorId', ParseIntPipe) doctorId: number) {
-    return this.service.getAllAvailabilityByDoctor(doctorId);
+  getAll(@Param('doctorId', ParseIntPipe) doctorId: number) {
+    return this.service.getAllByDoctor(doctorId);
   }
 }
