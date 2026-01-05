@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Get } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, Query } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 
@@ -6,7 +6,7 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 export class AppointmentsController {
   constructor(private readonly service: AppointmentsService) {}
 
-  // patientId mocked as 1 (replace with auth later)
+  // Patient books appointment
   @Post('book/:patientId')
   book(
     @Param('patientId') patientId: number,
@@ -15,13 +15,24 @@ export class AppointmentsController {
     return this.service.bookAppointment(dto, +patientId);
   }
 
-  @Post(':id/cancel')
+  // Patient cancels appointment
+  @Post('cancel/:id')
   cancel(@Param('id') id: number) {
     return this.service.cancelAppointment(+id);
   }
 
-  @Get(':patientId')
-  getPatient(@Param('patientId') patientId: number) {
+  // Patient views own appointments
+  @Get('patient/:patientId')
+  getPatientAppointments(@Param('patientId') patientId: number) {
     return this.service.getPatientAppointments(+patientId);
+  }
+
+  // Doctor views appointments (slot/session wise)
+  @Get('doctor/:doctorId')
+  getDoctorAppointments(
+    @Param('doctorId') doctorId: number,
+    @Query('date') date: string,
+  ) {
+    return this.service.getDoctorAppointments(+doctorId, date);
   }
 }
