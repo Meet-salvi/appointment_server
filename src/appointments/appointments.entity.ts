@@ -46,7 +46,7 @@ export class Appointment {
   @Column({ type: 'time' })
   end_time: string;
 
-  @Column({ type: 'time' })
+  @Column({ type: 'time', nullable: false })
   reporting_time: string;
 
   // BOOKED, CANCELLED

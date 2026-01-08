@@ -47,10 +47,10 @@ export class DoctorAvailability {
   schedule_type: ScheduleType;
 
   //ONE COLUMN FOR STREAM & WAVE
-  @Column()
+  @Column({ type: 'int', nullable: true })
   interval_minutes: number;
 
-  @Column()
+  @Column({ type: 'int' })
   capacity: number;
 
   @Column({ default: true })
