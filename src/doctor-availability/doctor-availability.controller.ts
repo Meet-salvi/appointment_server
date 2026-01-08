@@ -9,11 +9,14 @@ import {
 import { DoctorAvailabilityService } from './doctor-availability.service';
 import { CreateRecurringAvailabilityDto } from './dto/create-recurring-availability.dto';
 import { CreateCustomAvailabilityDto } from './dto/create-custom-availability.dto';
+import { ElasticWaveService } from './elastic-wave.service';
 
 @Controller('doctor-availability')
 export class DoctorAvailabilityController {
-  constructor(private readonly service: DoctorAvailabilityService) {}
-
+  constructor(
+    private readonly service: DoctorAvailabilityService,
+    private readonly elasticWaveService: ElasticWaveService,
+  ) {}
   @Post('recurring/:doctorId')
   createRecurring(
     @Param('doctorId', ParseIntPipe) doctorId: number,
@@ -33,5 +36,10 @@ export class DoctorAvailabilityController {
   @Get(':doctorId')
   getAll(@Param('doctorId', ParseIntPipe) doctorId: number) {
     return this.service.getAllByDoctor(doctorId);
+  }
+
+  @Post('elastic/wave')
+  applyElasticWave(@Body() body: any) {
+    return this.elasticWaveService.apply(body);
   }
 }

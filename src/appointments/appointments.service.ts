@@ -32,6 +32,9 @@ export class AppointmentsService {
 
     @InjectRepository(DoctorAvailability)
     private availabilityRepo: Repository<DoctorAvailability>,
+
+    @InjectRepository(Appointment)
+    private readonly repo: Repository<Appointment>,
   ) {}
 
   // BOOK APPOINTMENT
@@ -214,5 +217,30 @@ export class AppointmentsService {
     }
 
     return Object.values(grouped);
+  }
+
+  // WAVE APPOINTMENTS FOR ELASTIC SERVICE
+  findWaveAppointments(doctorId: number, date: string) {
+    return this.repo.find({
+      where: {
+        doctor: { id: doctorId },
+        appointment_date: date,
+        status: AppointmentStatus.BOOKED,
+      },
+      relations: ['doctor', 'availability'],
+      order: { created_at: 'ASC' },
+    });
+  }
+
+  moveToNextDay(appointmentId: number): void {
+    // placeholder
+  }
+
+  notify(appointmentId: number): void {
+    // placeholder
+  }
+
+  keepToday(appointmentId: number): void {
+    // placeholder
   }
 }

@@ -121,4 +121,22 @@ export class DoctorAvailabilityService {
       order: { start_time: 'ASC' },
     });
   }
+
+  findWaveByDoctorAndDate(doctorId: number, date: string) {
+    return this.repo.findOne({
+      where: {
+        doctor: { id: doctorId },
+        date,
+        schedule_type: ScheduleType.WAVE,
+      },
+      relations: ['doctor'],
+    });
+  }
+
+  updateSessionTime(id: number, startTime: string, endTime: string) {
+    return this.repo.update(id, {
+      start_time: startTime,
+      end_time: endTime,
+    });
+  }
 }
