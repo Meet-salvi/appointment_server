@@ -235,6 +235,19 @@ export class AppointmentsService {
     });
   }
 
+  // STREAM → sequential order
+  findStreamAppointments(doctorId: number, date: string) {
+    return this.repo.find({
+      where: {
+        doctor: { id: doctorId },
+        appointment_date: date,
+        status: AppointmentStatus.BOOKED,
+      },
+      order: { start_time: 'ASC' },
+    });
+  }
+
+  // MOVE APPOINTMENT TO NEXT DAY
   async moveToNextDay(appointmentId: number): Promise<void> {
     const appointment = await this.repo.findOne({
       where: { id: appointmentId },
@@ -262,17 +275,22 @@ export class AppointmentsService {
   async notify(appointmentId: number): Promise<void> {
     const appointment = await this.repo.findOne({
       where: { id: appointmentId },
-      relations: ['doctor'],
     });
 
-    if (!appointment) {
-      throw new NotFoundException('Appointment not found');
+    // Do NOT break elastic flow
+    if (!appointment) return;
+
+    try {
+      await this.notificationService.send({
+        title: 'Appointment Rescheduled',
+        message: 'Your appointment was moved due to a doctor schedule update.',
+        appointmentId: appointment.id,
+      });
+    } catch (error) {
+      console.error(
+        `Notification failed for appointment ${appointmentId}`,
+        error,
+      );
     }
-
-    await this.notificationService.send({
-      title: 'Appointment Rescheduled',
-      message: 'Your appointment was moved due to a doctor schedule update.',
-      appointmentId: appointment.id,
-    });
   }
 }

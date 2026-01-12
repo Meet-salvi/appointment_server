@@ -133,6 +133,17 @@ export class DoctorAvailabilityService {
     });
   }
 
+  findStreamByDoctorAndDate(doctorId: number, date: string) {
+    return this.repo.findOne({
+      where: {
+        doctor: { id: doctorId },
+        date,
+        schedule_type: ScheduleType.STREAM,
+      },
+      relations: ['doctor'],
+    });
+  }
+
   updateSessionTime(id: number, startTime: string, endTime: string) {
     return this.repo.update(id, {
       start_time: startTime,

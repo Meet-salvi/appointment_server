@@ -4,6 +4,7 @@ import { DoctorAvailability } from './doctor-availability.entity';
 import { DoctorAvailabilityService } from './doctor-availability.service';
 import { DoctorAvailabilityController } from './doctor-availability.controller';
 import { ElasticWaveService } from './elastic-wave.service';
+import { ElasticStreamService } from './elastic-stream.service';
 import { Doctor } from '../doctors/doctors.entity';
 import { Appointment } from '../appointments/appointments.entity';
 import { AppointmentsModule } from '../appointments/appointments.module';
@@ -13,7 +14,11 @@ import { AppointmentsModule } from '../appointments/appointments.module';
     TypeOrmModule.forFeature([DoctorAvailability, Doctor, Appointment]),
     AppointmentsModule,
   ],
-  providers: [DoctorAvailabilityService, ElasticWaveService],
+  providers: [
+    DoctorAvailabilityService,
+    ElasticWaveService,
+    ElasticStreamService,
+  ],
   controllers: [DoctorAvailabilityController],
 })
 export class DoctorAvailabilityModule {}
