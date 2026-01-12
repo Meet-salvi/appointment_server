@@ -9,6 +9,7 @@ import { DoctorAvailability } from '../doctor-availability/doctor-availability.e
 
 import { AppointmentsService } from './appointments.service';
 import { AppointmentsController } from './appointments.controller';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AppointmentsController } from './appointments.controller';
       Clinic,
       DoctorAvailability,
     ]),
+    NotificationsModule,
   ],
   controllers: [AppointmentsController],
   providers: [AppointmentsService],

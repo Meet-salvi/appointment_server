@@ -14,6 +14,7 @@ import { Clinic } from '../clinics/clinics.entity';
 import { DoctorAvailability } from '../doctor-availability/doctor-availability.entity';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ScheduleType } from '../doctor-availability/doctor-availability.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AppointmentsService {
@@ -35,6 +36,8 @@ export class AppointmentsService {
 
     @InjectRepository(Appointment)
     private readonly repo: Repository<Appointment>,
+
+    private readonly notificationService: NotificationsService,
   ) {}
 
   // BOOK APPOINTMENT
@@ -232,15 +235,44 @@ export class AppointmentsService {
     });
   }
 
-  moveToNextDay(appointmentId: number): void {
-    // placeholder
+  async moveToNextDay(appointmentId: number): Promise<void> {
+    const appointment = await this.repo.findOne({
+      where: { id: appointmentId },
+      relations: ['doctor'],
+    });
+
+    if (!appointment) return;
+
+    // 👉 Find next date (simple logic)
+    const next = new Date(appointment.appointment_date);
+    next.setDate(next.getDate() + 1);
+
+    const nextDate = next.toISOString().split('T')[0];
+
+    await this.repo.update(
+      { id: appointmentId },
+      {
+        appointment_date: nextDate,
+        // status stays BOOKED
+      },
+    );
   }
 
-  notify(appointmentId: number): void {
-    // placeholder
-  }
+  // Notification
+  async notify(appointmentId: number): Promise<void> {
+    const appointment = await this.repo.findOne({
+      where: { id: appointmentId },
+      relations: ['doctor'],
+    });
 
-  keepToday(appointmentId: number): void {
-    // placeholder
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+
+    await this.notificationService.send({
+      title: 'Appointment Rescheduled',
+      message: 'Your appointment was moved due to a doctor schedule update.',
+      appointmentId: appointment.id,
+    });
   }
 }

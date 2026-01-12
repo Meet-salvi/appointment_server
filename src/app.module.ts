@@ -16,6 +16,7 @@ import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { SpecializationModule } from './specialization/specialization.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { SpecializationModule } from './specialization/specialization.module';
     AuthModule,
     MailModule,
     SpecializationModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

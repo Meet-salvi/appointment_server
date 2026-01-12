@@ -18,6 +18,7 @@ import { DoctorAvailability } from '../doctor-availability/doctor-availability.e
 export enum AppointmentStatus {
   BOOKED = 'BOOKED',
   CANCELLED = 'CANCELLED',
+  RESCHEDULED = 'RESCHEDULED',
 }
 
 @Entity()

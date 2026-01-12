@@ -17,7 +17,7 @@ export class ElasticWaveService {
   async apply(body: any) {
     const { doctorId, date, start_time, end_time } = body;
 
-    // 🔒 Basic validation
+    // Basic validation
     if (!doctorId || !date || !start_time || !end_time) {
       throw new BadRequestException('Invalid payload');
     }
@@ -31,7 +31,7 @@ export class ElasticWaveService {
       throw new NotFoundException('Wave availability not found');
     }
 
-    // 🔒 Required for WAVE logic
+    // Required for WAVE logic
     if (!availability.interval_minutes) {
       throw new BadRequestException(
         'interval_minutes is required for WAVE scheduling',
@@ -47,22 +47,22 @@ export class ElasticWaveService {
     const isStartChanged = availability.start_time !== start_time;
     const isEndChanged = availability.end_time !== end_time;
 
-    // ❌ No change at all
+    // No change at all
     if (!isStartChanged && !isEndChanged) {
       return { message: 'No session change detected' };
     }
 
-    // ⬆️ EXTEND
+    //  EXTEND
     if (newDuration > oldDuration) {
       return this.extendWave(availability, start_time, end_time);
     }
 
-    // ⬇️ SHRINK
+    // SHRINK
     if (newDuration < oldDuration) {
       return this.shrinkWave(availability, start_time, end_time, newDuration);
     }
 
-    // 🔁 SAME DURATION BUT TIME SHIFT (FIXED CASE)
+    // SAME DURATION BUT TIME SHIFT (FIXED CASE)
     await this.availabilityService.updateSessionTime(
       availability.id,
       start_time,
@@ -74,7 +74,7 @@ export class ElasticWaveService {
     };
   }
 
-  // ⬆️ EXTEND SESSION
+  // EXTEND SESSION
   private async extendWave(
     availability: DoctorAvailability,
     newStartTime: string,
@@ -89,33 +89,49 @@ export class ElasticWaveService {
     return { message: 'Wave session extended' };
   }
 
-  // ⬇️ SHRINK SESSION
+  // SHRINK SESSION
   private async shrinkWave(
     availability: DoctorAvailability,
     newStartTime: string,
     newEndTime: string,
     newDuration: number,
   ) {
+    // Recalculate capacity
     const totalWaves = Math.floor(newDuration / availability.interval_minutes);
 
     const allowedCapacity = totalWaves * availability.capacity;
 
+    // Fetch booked appointments
     const appointments = await this.appointmentService.findWaveAppointments(
       availability.doctor.id,
       availability.date!,
     );
 
-    if (appointments.length > allowedCapacity) {
-      const overflow = appointments
-        .sort((a, b) => a.created_at.getTime() - b.created_at.getTime())
-        .slice(allowedCapacity);
+    // CHECK: do all patients fit?
+    if (appointments.length <= allowedCapacity) {
+      // Everyone fits → just update session
+      await this.availabilityService.updateSessionTime(
+        availability.id,
+        newStartTime,
+        newEndTime,
+      );
 
-      for (const appt of overflow) {
-        this.appointmentService.moveToNextDay(appt.id);
-        this.appointmentService.notify(appt.id);
-      }
+      return {
+        message: 'Wave session updated (all patients fit)',
+        movedAppointments: 0,
+      };
     }
 
+    // Overflow exists
+    const overflow = appointments.slice(allowedCapacity);
+
+    // Move + notify only overflow patients
+    for (const appt of overflow) {
+      await this.appointmentService.moveToNextDay(appt.id);
+      await this.appointmentService.notify(appt.id);
+    }
+
+    // Update session time
     await this.availabilityService.updateSessionTime(
       availability.id,
       newStartTime,
@@ -123,12 +139,12 @@ export class ElasticWaveService {
     );
 
     return {
-      message: 'Wave session Shrink',
-      movedAppointments: Math.max(0, appointments.length - allowedCapacity),
+      message: 'Wave session shrunk (overflow handled)',
+      movedAppointments: overflow.length,
     };
   }
 
-  // ⏱️ Time difference in minutes
+  // Time difference in minutes
   private diff(start: string, end: string): number {
     return (
       (new Date(`1970-01-01T${end}`).getTime() -
