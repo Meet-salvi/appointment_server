@@ -18,7 +18,18 @@ export class DoctorsService {
 
     @InjectRepository(Specialization)
     private readonly specializationRepo: Repository<Specialization>,
-  ) {}
+  ) { }
+
+  async findByUserId(userId: number) {
+    const doctor = await this.doctorRepo.findOne({
+      where: { user: { id: userId } },
+      relations: ['user', 'clinic', 'specialization'],
+    });
+    if (!doctor) {
+      throw new NotFoundException('Doctor not found');
+    }
+    return doctor;
+  }
 
   //   CREATE profile
   async createProfile(doctorId: number, dto: CreateDoctorProfileDto) {

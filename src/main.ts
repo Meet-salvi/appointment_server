@@ -20,7 +20,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: true,
+    origin: process.env.CORS_ORIGIN || true, // Allow specific origin in production
     credentials: true,
   });
 

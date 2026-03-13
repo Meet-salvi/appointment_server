@@ -28,7 +28,7 @@ export class AuthService {
     @InjectRepository(Admin) private adminRepo: Repository<Admin>,
     private jwtService: JwtService,
     private mailService: MailService,
-  ) {}
+  ) { }
 
   // SIGNUP
   async signup(dto: SignupDto) {
@@ -51,11 +51,13 @@ export class AuthService {
     const user = this.userRepo.create({
       full_name: dto.full_name,
       email: dto.email,
-      phone: dto.phone,
+      phone: dto.phone || undefined,
       password: hashedPassword,
       role: dto.role,
       provider: AuthProvider.LOCAL,
-      isVerified: false,
+      isVerified: true, // Auto-verify for now
+      otp,
+      otpExpiresAt,
     });
 
     await this.userRepo.save(user);
@@ -72,10 +74,14 @@ export class AuthService {
     }
 
     // Send OTP Email
-    await this.mailService.sendOtp(user.email, otp);
+    try {
+      await this.mailService.sendOtp(user.email, otp);
+    } catch (e) {
+      console.error('OTP email failed:', e);
+    }
 
     return {
-      message: 'Signup successful. Please verify OTP sent to your email.',
+      message: 'Signup successful. Check your email for OTP.',
       userId: user.id,
     };
   }
@@ -90,11 +96,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Check if email is verified
-    if (!user.isVerified) {
-      throw new UnauthorizedException('Please verify your email first');
-    }
-
     const isMatch = await bcrypt.compare(dto.password, user.password);
     if (!isMatch) {
       throw new UnauthorizedException('Invalid credentials');
@@ -105,9 +106,9 @@ export class AuthService {
 
     res.cookie('access_token', token, {
       httpOnly: true,
-      secure: false, // true in production (HTTPS)
+      secure: false,
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     return {
@@ -184,4 +185,47 @@ export class AuthService {
       message: 'OTP resent successfully to your email',
     };
   }
+
+  // FORGOT PASSWORD — Step 1: Send reset OTP
+  async forgotPassword(email: string) {
+    const user = await this.userRepo.findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('No account found with this email');
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.otp = otp;
+    user.otpExpiresAt = otpExpiresAt;
+    await this.userRepo.save(user);
+
+    await this.mailService.sendPasswordReset(user.email, otp);
+
+    return { message: 'Password reset OTP sent to your email' };
+  }
+
+  // RESET PASSWORD — Step 2: Verify OTP + set new password
+  async resetPassword(email: string, otp: string, newPassword: string) {
+    const user = await this.userRepo.findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (
+      user.otp !== otp ||
+      !user.otpExpiresAt ||
+      user.otpExpiresAt < new Date()
+    ) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.otp = null;
+    user.otpExpiresAt = null;
+    await this.userRepo.save(user);
+
+    return { message: 'Password reset successful. You can now sign in.' };
+  }
 }
+

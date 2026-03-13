@@ -15,6 +15,7 @@ import { DoctorAvailability } from '../doctor-availability/doctor-availability.e
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { ScheduleType } from '../doctor-availability/doctor-availability.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AppointmentsService {
@@ -38,16 +39,17 @@ export class AppointmentsService {
     private readonly repo: Repository<Appointment>,
 
     private readonly notificationService: NotificationsService,
+    private readonly mailService: MailService,
   ) {}
 
   // BOOK APPOINTMENT
   async bookAppointment(dto: CreateAppointmentDto, patientId: number) {
-    const patient = await this.patientRepo.findOneBy({ id: patientId });
+    const patient = await this.patientRepo.findOne({ where: { id: patientId }, relations: ['user'] });
     if (!patient) throw new NotFoundException('Patient not found');
 
     const doctor = await this.doctorRepo.findOne({
       where: { id: dto.doctorId },
-      relations: ['clinic'],
+      relations: ['clinic', 'user'],
     });
     if (!doctor) throw new NotFoundException('Doctor not found');
 
@@ -55,8 +57,7 @@ export class AppointmentsService {
 
     // date → day_of_week
     const dayOfWeek = new Date(dto.appointment_date)
-      .toLocaleDateString('en-US', { weekday: 'long' })
-      .toUpperCase();
+      .toLocaleDateString('en-US', { weekday: 'long' });
 
     // Date-specific availability
     let availability = await this.availabilityRepo.findOne({
@@ -67,16 +68,15 @@ export class AppointmentsService {
       },
     });
 
-    // Fallback to recurring availability
+    // Fallback to recurring availability (case-insensitive)
     if (!availability) {
-      availability = await this.availabilityRepo.findOne({
-        where: {
-          doctor: { id: dto.doctorId },
-          day_of_week: dayOfWeek,
-          date: IsNull(),
-          is_available: true,
-        },
-      });
+      availability = await this.availabilityRepo
+        .createQueryBuilder('a')
+        .where('a.doctorId = :doctorId', { doctorId: dto.doctorId })
+        .andWhere('LOWER(a.day_of_week) = LOWER(:day)', { day: dayOfWeek })
+        .andWhere('a.date IS NULL')
+        .andWhere('a.is_available = true')
+        .getOne();
     }
 
     if (!availability) {
@@ -91,18 +91,18 @@ export class AppointmentsService {
       throw new BadRequestException('Outside availability time');
     }
 
-    // One patient → one session
+    // One patient → one active booking per doctor per day
     const alreadyBooked = await this.appointmentRepo.findOne({
       where: {
-        patient,
-        availability,
+        patient: { id: patientId },
+        doctor: { id: dto.doctorId },
         appointment_date: dto.appointment_date,
         status: AppointmentStatus.BOOKED,
       },
     });
 
     if (alreadyBooked) {
-      throw new BadRequestException('Patient already booked for this session');
+      throw new BadRequestException('You already have an active booking with this doctor for this date. Cancel it first to rebook.');
     }
 
     // Slot capacity
@@ -150,7 +150,26 @@ export class AppointmentsService {
       status: AppointmentStatus.BOOKED,
     });
 
-    return this.appointmentRepo.save(appointment);
+    const saved = await this.appointmentRepo.save(appointment);
+
+    // Send email notification to doctor
+    try {
+      if (doctor.user?.email) {
+        await this.mailService.sendAppointmentNotification(
+          doctor.user.email,
+          doctor.user.full_name || 'Doctor',
+          patient.user?.full_name || 'Patient',
+          dto.appointment_date,
+          dto.start_time,
+          dto.end_time,
+          token,
+        );
+      }
+    } catch (e) {
+      console.error('Appointment email notification failed:', e);
+    }
+
+    return saved;
   }
 
   // CANCEL
@@ -166,19 +185,10 @@ export class AppointmentsService {
   async getPatientAppointments(patientId: number) {
     return this.appointmentRepo.find({
       where: { patient: { id: patientId } },
+      relations: ['doctor', 'doctor.user', 'doctor.specialization', 'doctor.clinic'],
       order: {
         appointment_date: 'DESC',
         start_time: 'ASC',
-      },
-      select: {
-        id: true,
-        appointment_date: true,
-        start_time: true,
-        end_time: true,
-        reporting_time: true,
-        status: true,
-        token_number: true,
-        created_at: true,
       },
     });
   }

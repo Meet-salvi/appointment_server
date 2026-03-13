@@ -10,6 +10,10 @@ import { DoctorAvailability } from '../doctor-availability/doctor-availability.e
 import { AppointmentsService } from './appointments.service';
 import { AppointmentsController } from './appointments.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AuthModule } from '../auth/auth.module';
+import { PatientsModule } from '../patients/patients.module';
+import { DoctorsModule } from '../doctors/doctors.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -21,9 +25,13 @@ import { NotificationsModule } from '../notifications/notifications.module';
       DoctorAvailability,
     ]),
     NotificationsModule,
+    AuthModule,
+    PatientsModule,
+    DoctorsModule,
+    MailModule,
   ],
   controllers: [AppointmentsController],
   providers: [AppointmentsService],
   exports: [AppointmentsService],
 })
-export class AppointmentsModule {}
+export class AppointmentsModule { }

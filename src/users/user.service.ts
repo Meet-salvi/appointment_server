@@ -10,7 +10,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
-  ) {}
+  ) { }
 
   async getUsersByRole(role: UserRole) {
     if (!Object.values(UserRole).includes(role)) {
@@ -26,6 +26,13 @@ export class UsersService {
     return this.userRepo.find({
       where: { role },
       relations: relationsMap[role],
+    });
+  }
+
+  async findById(id: number) {
+    return this.userRepo.findOne({
+      where: { id },
+      relations: ['doctor', 'patient', 'admin'],
     });
   }
 }
