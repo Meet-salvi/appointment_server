@@ -26,7 +26,7 @@ export class MailService {
       await this.transporter.sendMail({
         from: this.configService.get<string>('MAIL_USER'),
         to: email,
-        subject: '🔐 Email Verification OTP - Schedula',
+        subject: '🔐 Email Verification OTP - MedPulse',
         html: `
           <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:30px;background:#0F131A;color:#fff;border-radius:16px;">
             <h2 style="color:#14b8a6;margin-bottom:10px;">Verify Your Email</h2>
@@ -36,7 +36,7 @@ export class MailService {
             </div>
             <p style="color:#64748b;font-size:13px;">This code expires in <strong>10 minutes</strong>. Do not share it with anyone.</p>
             <hr style="border-color:rgba(255,255,255,0.1);margin:20px 0;">
-            <p style="color:#475569;font-size:11px;text-align:center;">© 2026 Schedula Technologies</p>
+            <p style="color:#475569;font-size:11px;text-align:center;">© 2026 MedPulse Technologies</p>
           </div>
         `,
       });
@@ -73,7 +73,7 @@ export class MailService {
               </table>
             </div>
             <hr style="border-color:rgba(255,255,255,0.1);margin:20px 0;">
-            <p style="color:#475569;font-size:11px;text-align:center;">© 2026 Schedula Technologies</p>
+            <p style="color:#475569;font-size:11px;text-align:center;">© 2026 MedPulse Technologies</p>
           </div>
         `,
       });
@@ -87,7 +87,7 @@ export class MailService {
       await this.transporter.sendMail({
         from: this.configService.get<string>('MAIL_USER'),
         to: email,
-        subject: '🔑 Password Reset OTP - Schedula',
+        subject: '🔑 Password Reset OTP - MedPulse',
         html: `
           <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:30px;background:#0F131A;color:#fff;border-radius:16px;">
             <h2 style="color:#14b8a6;margin-bottom:10px;">Reset Your Password</h2>
@@ -97,7 +97,7 @@ export class MailService {
             </div>
             <p style="color:#64748b;font-size:13px;">This code expires in <strong>10 minutes</strong>. If you didn't request this, please ignore this email.</p>
             <hr style="border-color:rgba(255,255,255,0.1);margin:20px 0;">
-            <p style="color:#475569;font-size:11px;text-align:center;">© 2026 Schedula Technologies</p>
+            <p style="color:#475569;font-size:11px;text-align:center;">© 2026 MedPulse Technologies</p>
           </div>
         `,
       });
