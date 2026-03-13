@@ -73,15 +73,8 @@ export class AuthService {
       await this.adminRepo.save({ user });
     }
 
-    // Send OTP Email
-    try {
-      await this.mailService.sendOtp(user.email, otp);
-    } catch (e) {
-      console.error('OTP email failed:', e);
-    }
-
     return {
-      message: 'Signup successful. Check your email for OTP.',
+      message: 'Signup successful',
       userId: user.id,
     };
   }
