@@ -30,12 +30,21 @@ import { NotificationsModule } from './notifications/notifications.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const url = configService.get<string>('DATABASE_URL');
-        console.log('DEBUG: Connecting to database host:', configService.get('DB_HOST'));
+        const host = configService.get<string>('DB_HOST');
+        
+        console.log('--- DATABASE CONFIG DEBUG ---');
+        console.log('DB_HOST:', host);
+        console.log('DATABASE_URL length:', url?.length || 0);
+        
+        if (!url) {
+          throw new Error('DATABASE_URL is not defined in .env! Please check your configuration.');
+        }
+
         return {
           type: 'postgres',
           url: url,
           autoLoadEntities: true,
-          synchronize: true, // set false in production
+          synchronize: true,
           ssl: {
             rejectUnauthorized: false,
           },
