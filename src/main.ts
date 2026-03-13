@@ -20,7 +20,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || true, // Allow specific origin in production
+    origin: process.env.CORS_ORIGIN || 'https://appointment-client-gray.vercel.app',
     credentials: true,
   });
 
